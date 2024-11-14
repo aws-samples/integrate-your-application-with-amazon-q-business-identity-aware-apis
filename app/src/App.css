@@ -1,0 +1,1323 @@
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+#root {
+  background: white;
+}
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.Chat {
+  text-align: left;
+  font-size: 20px;
+  width: 1000px;
+  margin-block: 35px;
+  line-height: 125%;
+}
+
+.GenAI {
+  color: yellow;
+}
+
+.You {
+  color: cyan;
+}
+
+
+
+
+* {
+
+  color:#1b1919;
+}
+
+.App {
+text-align: center;
+}
+
+.AuthIndicator {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  left: 20px!important;
+  height: 60px!important;
+  width: 300px;
+  padding: 0px 0!important;
+  z-index: 99999999999!important;
+  color: whitesmoke!important;
+  padding-left: 20px!important;
+  cursor: unset;
+}
+
+.AuthIndicator svg {
+  fill: whitesmoke!important;
+  height: 40px;
+  width: 40px;
+  position: relative;
+  padding: 0!important;
+  padding-top: 10px!important;
+  top: 5px;
+}
+
+.AuthIndicator p {
+  height: 60px;
+  padding-top: 20px!important;
+  color: whitesmoke!important;
+  font-size: 14px;
+  margin: 0!important;
+  position: relative;
+  left: -10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+
+
+.App-logo {
+height: 40vmin;
+pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.App-logo {
+  animation: App-logo-spin infinite 20s linear;
+}
+}
+
+.App-header {
+background-color: #282c34;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+font-size: calc(10px + 2vmin);
+color: white;
+}
+
+.App-link {
+color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+from {
+  transform: rotate(0deg);
+}
+to {
+  transform: rotate(360deg);
+}
+}
+
+.App {
+  width: 100vw;
+  height: 100vh;
+}
+
+.AppContent {
+  height: 100vh;
+  width: 100vw;
+  padding-top: 90px;
+  margin-bottom: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background: white;
+}
+
+.AppContentSection {
+  padding: 30px 100px 0px 100px;
+  width: 100vw;
+  max-width: 1100px;
+}
+
+.AppContentSection h3 {
+  margin-left: -30px!important;
+}
+
+.AppContentSection p {
+  border-left: 2px solid rgba(255, 139, 44, 0.5);
+  padding-left: 10px;
+  margin-bottom: 18px;
+}
+
+.code-block {
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-top: 20px!important;
+  padding-left: 20px!important;
+  padding-bottom: 20px!important;
+  overflow: hidden;
+}
+
+.tooltip-button {
+  position: relative;
+}
+
+.tooltip-button .tooltip {
+  visibility: hidden;
+  width: 200px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip-button .tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+.tooltip-button:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+.code-block code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  color: #333;
+  padding: 20px!important;
+  white-space: pre!important;
+
+}
+
+.code-block svg {
+  height: 20px;
+  width: 20px;
+  background: white!important;
+  border: none!important;
+}
+
+.code-block button {
+  background: white;
+  height: 38px;
+  width: 50px;
+  padding-top: 7px;
+  cursor: pointer;
+}
+
+.code-block button:hover {
+  background: white;
+  height: 38px;
+  width: 50px;
+  padding-top: 7px;
+  cursor: pointer;
+  border-color: rgb(255, 139, 44);
+}
+
+
+
+.CodeBlockControls {
+  width: 100%!important;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-bottom: -20px;
+}
+
+.airwolf-header {
+  margin: 0 auto;
+  background-color: rgb(0, 0, 0);
+  position: fixed;
+  width: 100%;
+  height: 60px;
+  overflow: hidden;
+  top: 0;
+}
+.Header {
+  margin: 0;
+  background-color: #232f3e;
+  position: fixed;
+  width: 100vw;
+  height: 60px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.202);
+  z-index: 15;
+  -webkit-box-shadow: 2px 5px 15px 5px rgba(0,0,0,0.55);
+  -moz-box-shadow: 2px 5px 15px 5px rgba(0,0,0,0.55);
+  box-shadow: 1px 1px 5px 0px rgba(0,0,0,0.55);
+  color: white;
+}
+
+.Header button { 
+  color: white!important;
+}
+
+.Header img {
+  height: 40px;
+  top:5px;
+  position: relative;
+  padding-left: 30px;
+}
+
+.Header * {
+  padding-left:20px;
+  font-size: 26px;
+  height: 60px;
+  vertical-align:middle;
+  padding-top:10px;
+
+}
+
+.airwolf-header-subtitle {
+  z-index: 2;
+  letter-spacing: 2px;
+  position: absolute;
+  color: rgb(250,250,250);
+  top: 99px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.airwolf-header-stripe-shine {
+  position: absolute;
+  content: '';
+  background: white;
+  width: 100%;
+  height: 20px;
+  transform: rotate(-70deg);
+
+  animation-duration: 6s;
+  animation-name: shine;
+  animation-iteration-count: infinite;
+}
+.airwolf-header-stripe-shine.two {
+  height: 10px;
+  animation-duration: 3s;
+}
+
+.airwolf-header-stripe-fade {
+  display: block;
+  width: 1000px;
+  height: 20px;
+
+  background: rgb(236,114,17);
+
+  margin-left: -20px;
+  margin-top: -20px;
+
+  transform: rotate(-20deg);
+  animation-duration: 6s;
+  animation-name: fadeInOut;
+  animation-iteration-count: infinite;
+
+
+}
+
+@keyframes shine {
+  0% {
+      transform: rotate(-90deg);
+      left: -100%;
+      background: rgba(255,255,255,0);
+  }
+
+  15% {
+      transform: rotate(-70deg);
+  }
+
+  25% {
+      left: 50%;
+      background: rgba(255,255,255,0.05);
+  }
+
+  100% {
+      transform: rotate(-90deg);
+      left: 150%;
+      background: rgba(255,255,255,0);
+  }
+}
+
+
+button.amplify-menu-content__item {
+  margin-right: 0!important;
+  border-bottom: none!important;
+  color: rgb(35,47,62)!important;
+  height: 70px;
+  width: 300px;
+}
+
+button.amplify-menu-content__item:hover {
+  margin-right: 0!important;
+  border-bottom: none!important;
+  color: rgb(35,47,62)!important;
+  background: #FF9900!important;
+}
+
+button.amplify-menu-content__item.active {
+  margin-right: 0!important;
+  border-bottom: none!important;
+}
+
+.OtherModels svg {
+  height: 40px;
+  fill: whitesmoke;
+  margin-top: 5px;
+}
+.OtherModels svg:hover {
+  height: 40px;
+  fill: rgb(236,114,17)!important;
+  margin-top: 5px;
+}
+
+.QBotChildComponent {
+  width: 100%;
+  background: white;
+}
+
+.AdminViewControls {
+  height: 80px;
+  width: 100%;
+  padding: 10px;
+  background:rgba(0, 0, 0, 0.102);
+}
+
+.AdminViewControls button {
+  width: 200px;
+  height: 60px;
+  background: whitesmoke;
+}
+
+.AdminViewControls button.active {
+  color: rgb(255, 139, 44);
+  background: rgb(35,47,62);
+}
+
+.QBotChildComponentInner {
+  height: 100%;
+  width: 100%;
+  padding: 20px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.InnerContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+table {
+  width: 100%!important;
+  max-width: 1100px!important;
+  
+}
+
+thead {
+  border-bottom: 2px solid black!important;
+  /* background: rgb(35,47,62)!important; */
+}
+
+
+
+thead:hover {
+  border-bottom: 2px solid black!important;
+  /* background: rgb(35,47,62)!important; */
+}
+
+th, tr {
+  text-align: left!important;
+}
+
+.CreateRoleModal {
+  position: fixed;
+  top: 0px;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.102);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.CreateApplicantModal {
+  position: fixed;
+  top: 0px;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.102);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.ShowApplicantModal {
+  position: fixed;
+  top: 0px;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.102);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.InnerModal {
+  background: whitesmoke;
+  width: 100%;
+  height: 650px;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 2px 2px 15px 2px rgba(0,0,0,0.25); 
+  padding: 20px 40px;
+}
+
+.InnerModalAlt {
+  background: whitesmoke;
+  width: 100%;
+  height: 650px;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 2px 2px 15px 2px rgba(0,0,0,0.25); 
+  padding: 0px;
+  overflow-y: scroll;
+}
+
+.InnerModal h4 {
+
+  padding: 0px 0px;
+  margin: 10px!important;
+  
+}
+
+.InputPair {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+.InputPair.Hor {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-top: 10px;
+}
+
+.ProfileDetails {
+  width: 100%;
+  max-width: 900px;
+  height: 80vh;
+  padding: 20px;
+  overflow: hidden;
+  overflow-y: scroll;
+}
+
+.InputPairQuestions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+.InputPair div, .InputPairQuestions div {
+  font-weight: 600;;
+}
+
+.InputPair input {
+  width: 100%!important;
+  height: 40px;
+}
+
+.InputPair textarea {
+  width: 100%!important;
+  height: 360px;
+}
+
+.ButtonPair {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+.ButtonPair button {
+  width: 200px;
+}
+
+.InputPair p {
+  width: 100%!important;
+  margin: 0!important;
+  font-size: 16px!important;
+  font-weight: 100!important;
+}
+
+.InputPairQuestions p {
+  width: 100%!important;
+  margin: 0!important;
+  font-size: 16px!important;
+  font-weight: 100!important;
+  padding: 2px 0 0 0!important;
+}
+
+.InnerModalAlt .ButtonPair {
+  margin: 30px 0;
+}
+
+.InnerModalHeader {
+  background: rgb(35,47,62);
+  color: white;
+  height: 70px!important;
+  width: 900px!important;
+  margin: 0px 0px 40px 0px!important;
+  padding: 20px 0px!important;
+  text-align: center!important;
+  font-weight: 600!important;
+  position:fixed;
+  margin-bottom: 80px!important; 
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.InnerModalHeader p {
+  color: white!important;
+  padding-left: 40px;
+}
+
+.InnerModalHeader button {
+  color: white!important;
+  margin-right: 40px;
+}
+
+.InnerModalHeader button:hover {
+  color: rgb(35,47,62)!important;
+  margin-right: 40px;
+}
+
+
+
+.ShowApplicantModal .RoleTitle {
+  background: rgb(35,47,62);
+  color: white;
+  height: 70px!important;
+  width: 900px!important;
+  margin: 0px;
+  padding: 20px 0px!important;
+  text-align: center!important;
+  font-weight: 600!important;
+  position:unset!important;
+  margin-bottom: 0px!important; 
+}
+
+.InnerModalAltAlt {
+  padding: 0px 40px 0px 40px!important;
+  width: 100%;
+}
+
+.CreateApplicantModal .InnerModal .InputPair {
+  padding: 10px 0px;
+}
+
+.ShowApplicantModal .InnerModalAlt .InputPair p {
+  padding-top: 5px!important;
+}
+
+.ShowApplicantModal .InnerModalAlt {
+  width: 900px!important;
+}
+
+.InnerModalAltAlt > div:first-child {
+  padding-top: 80px!important;
+}
+
+.ShowApplicantModal .InnerModalAltAlt > div:first-child {
+  padding-top: 0px!important;
+}
+
+.InputPair.Hor div {
+  width: 200px;
+  text-align: right;
+}
+
+.InputPair.Hor p {
+  width: 100%!important;
+  margin: 0!important;
+  font-size: 20px!important;
+  font-weight: 100!important;
+  padding: 0 0 0 20px!important;
+}
+
+.UploadResume {
+  margin-top:30px!important;
+  height: 60px!important;
+}
+
+.Cent {
+  align-items: center;
+}
+
+.DeleteButton {
+  height: 42px!important;
+  width: 60px!important;
+}
+
+.ViewButton {
+  margin-top: -6px!important;
+  position:relative;
+}
+
+.ProctorModal {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.302);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.ProctorModal .InnerModal {
+  height: 85vh!important;
+  width: 90vw!important;
+  max-width: 1200px!important;
+  padding: 0!important;
+}
+
+.ProctorModal .ButtonPair {
+  height: 60px!important;
+  padding: 0!important;
+  margin: 0!important;
+  display: flex;
+  flex-direction: row!important;
+  justify-content: flex-end!important;
+}
+
+.ProctorModal .AdminViewControls {
+  margin: 0!important;
+  padding: 0!important;
+  height: 64px!important;
+  background: rgba(35,47,62,0.3)
+}
+
+.ProctorModal .ButtonPair button {
+  width: 120px!important;
+  margin-right: 5px;
+  height: 46px!important;
+  margin-top:8px!important;
+}
+
+.QModalButton {
+  width: 60px!important;
+  height: 60px!important;
+  position: fixed!important;
+  bottom: -25px!important;
+  cursor: pointer!important;
+  /* left: 40%;  */ 
+  bottom: 30px!important;
+  left: calc(100% - 90px)!important;
+  z-index:40!important;
+  fill:#1c7c5c!important;
+  display: flex;
+  flex-direction: column!important;
+  justify-content: center!important;
+  align-items: center!important;
+  background:rgb(255, 255, 255)!important;
+  box-shadow: 5px 5px 15px -10px rgba(0,0,0,0.75)!important;
+}
+
+
+
+.lds-ripple {
+  /* change color here */
+  color: #1c4c5b;
+  position: relative;
+  top: -20p;
+}
+.lds-ripple,
+.lds-ripple div {
+  box-sizing: border-box;
+}
+.lds-ripple {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-ripple div {
+  position: absolute;
+  border: 4px solid rgb(89,33,185)!important;
+  opacity: 1;
+  border-radius: 50%;
+  animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+.lds-ripple div:nth-child(2) {
+  animation-delay: -0.7s;
+  border: 4px solid rgb(5, 160, 209)!important;
+}
+@keyframes lds-ripple {
+  0% {
+    top: 36px;
+    left: 36px;
+    width: 8px;
+    height: 8px;
+    opacity: 0;
+  }
+  4.9% {
+    top: 36px;
+    left: 36px;
+    width: 8px;
+    height: 8px;
+    opacity: 0;
+  }
+  5% {
+    top: 36px;
+    left: 36px;
+    width: 8px;
+    height: 8px;
+    opacity: 1;
+  }
+  100% {
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+  }
+}
+
+.ChatbotOuterModal {
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0!important;
+  left: 0!important;
+  background: rgba(0, 0, 0, 0.402);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.ChatbotInnerModal {
+  height: 640px!important;
+  width: 800px!important;
+  background:whitesmoke;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 5px 5px 15px -10px rgba(0,0,0,0.75)!important;
+  border-radius: 8px;
+  overflow:hidden;
+}
+
+.ChatbotHeader {
+  height: 60px;
+  width: 100%;
+  background: rgb(35,47,62);
+  border-bottom: 1px solid rgb(35,47,62);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  
+}
+
+.ChatbotHeader h4 {
+  height: 60px;
+  padding: 0!important;
+  color: rgb(35,47,62);
+  margin: 0!important;
+  padding: 10px 30px!important;
+  font-size: 26px!important;
+  width: 100px!important;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.ChatbotHeader h4:not(.alt) {
+  background: whitesmoke!important;
+  height: 60px!important;
+}
+
+.ChatbotBody {
+  height: 100%!important;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  overflow-y:scroll;
+  padding-top: 10px;
+  padding-bottom: 70px!important;
+}
+
+.ChatConversationsContainer {
+  height: 580px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  overflow: hidden;
+  overflow-y: scroll;
+}
+
+.ChatConversationsContainer.Conversations {
+  padding: 20px 80px;
+}
+
+.ConversationButtonContainer {
+  width: 100%!important;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.ConversationButtonContainer button:not(.TrashContainer) {
+  width: 100%!important;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between!important;
+}
+
+.ChatConversationsContainer.Chat {
+  padding: 10px 20px;
+  margin-block: unset!important;
+}
+
+.Time {
+  font-size: 14px;
+}
+
+.ConversationButton {
+  width: 100%!important;
+  text-align: left!important;
+  display: flex!important;
+  justify-content: space-between!important;
+  flex-direction: row!important;
+  font-size: 16px!important;
+  font-weight: 100!important;
+}
+
+.MessageContainer_SYSTEM, .MessageContainer_USER {
+  height: auto;
+  width: 70%!important;
+  font-size: 16px!important;
+  padding: 0px!important;
+  margin: 5px;
+  text-align: left;
+  padding-left: 10px!important;
+  border-radius: 5px!important;
+  display: flex;
+  flex-direction: column;
+}
+
+.ChatMessage_SYSTEM, .ChatMessage_USER, .ChatMessage_SYSTEM_SPACING {
+  height: auto;
+  width: 100%!important;
+  font-size: 16px!important;
+  border: 1px solid black!important;
+  padding: 5px!important;
+  margin: 10px;
+  text-align: left;
+  padding-left: 15px!important;
+  border-radius: 5px!important;
+  margin-bottom: 3px!important;
+}
+
+.MessageContainer_USER {
+  align-self: flex-end;
+  align-content: flex-end;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.ChatMessage_SYSTEM {
+  /* align-self: flex-end; */
+  /* background: rgba(5, 160, 209, 1); */
+  background: rgba(0, 0, 0, 0.102);
+  margin-left: 0!important;
+  padding: 5px 15px!important;
+}
+
+.ChatMessage_USER {
+  width: fit-content!important;
+  padding: 5px 15px!important;
+   margin-right: 0!important;
+}
+.ChatMessage_SYSTEM_SPACING {
+  /* align-self: flex-end; */
+  background: whitesmoke;
+  border: none!important;
+}
+
+.ChatInputContainer {
+  height: 70px!important;
+  width: 100%!important;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  border-top: 1px solid rgb(35,47,62);
+  align-self: flex-end!important;
+  justify-self: flex-end!important;
+  background: white;
+
+}
+
+.ChatInputContainer input {
+  height: 70px!important;
+  width: 740px!important;
+  border-radius: 0!important;
+  border: none!important;
+  padding-left: 40px;
+  font-size: 18px!important;
+  background: white;
+}
+.ChatInputContainer input:focus {
+  height: 70px!important;
+  width: 740px!important;
+  border-radius: 0!important;
+  border: none!important;
+  font-size: 18px!important;
+  border: none!important;
+  outline: none!important;
+}
+.ChatInputContainer button {
+  height: 70px!important;
+  /* width: 30px!important; */
+  border-radius: 0!important;
+}
+
+.ChatInputContainer svg {
+  height: 70px!important;
+  width: 30px!important;
+  border-radius: 0!important;
+}
+
+.ChatLoadingContainer {
+  height: 70px;
+  /* width: 0px; */
+  overflow: hidden!important;
+}
+
+.ChatLoadingContainer .lds-ripple {
+  /* change color here */
+  color: #1c4c5b;
+  position: relative;
+  display: inline-block;
+  position: relative;
+  top: -5px;
+  height: 40px;
+}
+
+.Spacing {
+  height: 40px!important;
+  width: 100%!important;
+}
+
+.signOut {
+  height: 60px!important;
+  border: none!important;
+  font-size: 16px!important;
+  position: relative;
+  left: -10px!important;
+}
+
+.signOut:hover {
+  color: rgb(35,47,62)!important;
+}
+
+.SubmitSendButton {
+
+  border: none!important;
+}
+
+.ModalButtonBack {
+  fill: whitesmoke!important;
+  cursor: pointer!important;
+  margin-right: 20px;
+}
+
+.ModalButtonBack:hover {
+  cursor: pointer!important;
+  fill: rgb(236,114,17)!important;
+}
+
+.ModalButtonBack {
+  justify-content: center!important;
+  width: 50px;
+  align-content: center;
+  height: 40px;
+  display: flex;
+  align-items:center;
+}
+
+.ModalButtonBack svg {
+  width: 30px;
+  height: 30px;
+  /* padding: 3px; */
+  padding-top: 0px;
+}
+
+.ChatbotHeader svg {
+  display: flex!important;
+  /*width: calc(100% - 60px)!important;*/
+  width: 40px;
+  /*padding-left: 10px!important;*/
+  padding-right: 0px!important;
+  /*position: relative!important;*/
+  /*top: -60px!important;*/
+  /*left: calc(50% - 130px);*/
+  /*text-align: center;*/
+}
+
+.MessageDateTime {
+  width: 140px!important;
+  font-size: 13px;
+}
+
+.SourceAttributions {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 7px;
+  font-size: 14px!important;
+}
+
+.SourceAttribution {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  font-style: italic!important;
+  
+}
+
+.SourceAttribution p {
+  margin: 0;
+  padding: 0;
+  color: #9b6a20!important;
+}
+
+.SourceAttribution a {
+  text-decoration: none;
+  padding: 0;
+  color: #9b6a20!important;
+}
+
+.ModalButtonClose {
+  height: 40px;
+  width: 40px;
+  fill: whitesmoke!important;
+  cursor: pointer!important;
+  position: relative;
+  top: -2px;
+  align-self:flex-end!important;
+  justify-self: flex-end!important;
+
+}
+
+.ModalButtonClose:hover {
+  fill: red!important;
+}
+
+.closeModal {
+  width: 30px!important;
+  padding-top: 7px;
+}
+
+h4.alt {
+  padding-right: 5px!important;
+  width: 150px!important;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  height: 60px!important;
+  margin: 0!important;
+}
+
+
+.lds-ripple div {
+  position: absolute;
+  border: 4px solid rgb(89,33,185)!important;
+  opacity: 1;
+  border-radius: 50%;
+  animation: lds-ripple 1s cubic-bezier(0, 0.1, 0.8, 1) infinite;
+}
+
+.lds-ripple div:nth-child(2) {
+  animation-delay: -0.7s;
+  border: 4px solid rgba(5, 161, 209, 0.781)!important;
+}
+.lds-ripple div:nth-child(3) {
+  animation-delay: -0.7s;
+  border: 4px solid rgb(35, 47, 62)!important;
+}
+
+.SubmitSendButton:disabled svg {
+  fill: grey!important;
+}
+
+.SubmitSendButton:hover svg {
+  fill: #FF9900!important;
+}
+
+button.react-scroll-to-bottom--css-lpqlj-1tj0vk3 {
+  position: relative!important;
+  top: -50px!important;
+  left: 350px!important;
+  background: rgba(89,33,185, 0.6)!important;
+}
+
+button.react-scroll-to-bottom--css-lpqlj-1tj0vk3:hover {
+  background: rgba(89,33,185, 0.8)!important;
+}
+
+/* [id]:not(:first-of-type):not(:only-of-type) {
+  display: none!important;
+} */
+
+sup.CitationNumber {
+  display: inline!important;
+  color: #ff8800!important;
+}
+
+.TrashContainer {
+  width: 50px!important;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.TrashContainer:hover {
+  fill: red!important;
+}
+
+.TrashContainer svg {
+  height: 20px!important;
+  width: 20px!important;
+}
+
+.RippleContainer {
+  height: 100%!important;
+  width: 100%!important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.amplify-button:hover {
+  border-color: rgb(236,114,17)!important;
+}
+
+.NewConversation {
+  position: relative!important;
+  /* top: 15px!important; */
+  top: -30px!important;
+
+}
+
+.amplify-flex.amplify-tabs {
+  display: none;
+}
+
+.ConversationNull {
+  padding: 30px;
+  font-size: 22px;
+}

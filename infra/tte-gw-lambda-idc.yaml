@@ -1,0 +1,903 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT.
+
+Parameters:
+  IdentityCenterInstanceId:
+    Type: String
+    Description: The ID of the AWS IAM Identity Center instance
+
+  QBusinessApplicationId:
+    Type: String
+    Description: The ID of the Amazon Q Business application
+
+Resources:
+  MyAPI:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Description: Example HTTP API
+      Name: api-with-auth
+      ProtocolType: HTTP
+      Target: !GetAtt TTELambda.Arn
+
+  PostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      RouteKey: POST /
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+
+  OptionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MyAPI
+      RouteKey: OPTIONS /
+      AuthorizationType: NONE
+
+  JWTAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref MyAPI
+      AuthorizerType: JWT
+      IdentitySource:
+        - $request.header.Authorization
+      JwtConfiguration:
+        Audience:
+          - !Ref AppClient
+        Issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+      Name: test-jwt-authorizer
+
+  TTELambda:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W92
+            reason: Lambda used by CFN Stack Creation to implement TTE
+          - id: W89
+            reason: Lambda used by CFN Stack Creation for TTE. VPC not required
+    Properties:
+      FunctionName: !Join
+        - '-'
+        - - !Ref AWS::StackName
+          - TTELambdaFunction
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Role: !GetAtt TTELambdaRole.Arn
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          IDC_APP_CLIENT_ID: !GetAtt IDCApiApp.ApplicationArn
+          QBIZ_ROLE_ARN: !GetAtt QBizChatRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          from botocore.config import Config
+          import datetime
+          import os
+          import logging
+          import sys
+          import subprocess
+          subprocess.call('pip install PyJWT -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          sys.path.insert(1, '/tmp/')
+          import jwt
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          sts_client = boto3.client('sts')
+          oidc_client = boto3.client('sso-oidc')
+          IDC_APP_CLIENT_ID = os.environ.get('IDC_APP_CLIENT_ID')
+          ROLE_ARN = os.environ.get('QBIZ_ROLE_ARN')
+          CORS_HEADERS = {
+            "iBase64Encoded":"false",
+            "Access-Control-Allow-Headers":"Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Methods":"POST,OPTIONS,GET"
+          }
+          def lambda_handler(event, context):
+            logger.info("IDC_APP_CLIENT_ID: %s" % IDC_APP_CLIENT_ID)
+            logger.info("ROLE_ARN: %s" % ROLE_ARN)
+            logger.info("Received event: %s" % json.dumps(event))
+            if (event["version"] == "1.0"):
+              httpMethod = event['httpMethod']
+            elif (event["version"] == "2.0"):
+              httpMethod = event["requestContext"]["http"]["method"]
+            else:
+              logger.info('Unknown version: ' % event["version"])
+              httpMethod = event["requestContext"]["http"]["method"]
+            if httpMethod == 'OPTIONS':
+              logger.info('Handling OPTIONS event')
+              return {
+                "statusCode": 200,
+                "headers": CORS_HEADERS,
+                "body": json.dumps({ 'message': 'Hello'})
+              }
+            elif httpMethod == 'POST':
+              logger.info('Handling POST event')
+              post_string = event['body']
+              if len(post_string) > 0:
+                post_json = json.loads(post_string)
+                logger.info("Received post json: %s" % json.dumps(post_json))
+                if ('idToken' in post_json):
+                  id_token = post_json['idToken']
+                  try:
+                    oidc_token_response = oidc_client.create_token_with_iam(
+                      clientId = IDC_APP_CLIENT_ID,
+                      grantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                      assertion = id_token
+                    )
+                  except Exception as e:
+                    logger.error(e)
+                    result = {
+                      'credentials': {},
+                      'status': "Exception: " + str(e)
+                    }
+                  else:
+                    claims = jwt.decode(oidc_token_response["idToken"], options={"verify_signature": False})
+                    logger.info("oidc_token_response claims: %s" % claims)
+                    x = datetime.datetime.now()
+                    user_creds = sts_client.assume_role(
+                      RoleArn=ROLE_ARN,
+                      RoleSessionName="tti_session_"+str(x.strftime("%f")),
+                      DurationSeconds=3600,
+                      ProvidedContexts=[
+                        {
+                          'ProviderArn': "arn:aws:iam::aws:contextProvider/IdentityCenter",
+                          'ContextAssertion': claims["sts:identity_context"]
+                        }
+                      ]
+                    )
+                    result = {
+                      'credentials': {
+                        'accessKeyId': user_creds['Credentials']['AccessKeyId'],
+                        'secretAccessKey': user_creds['Credentials']['SecretAccessKey'],
+                        'sessionToken': user_creds['Credentials']['SessionToken']
+                      },
+                      'status': "SUCCESS"
+                    }
+                else:
+                  result = {
+                    'credentials': {},
+                    'status': "ERROR: idToken not provided"
+                  }
+              else:
+                result = {
+                  'credentials': {},
+                  'status' : "ERROR: JSON document body containing idToken is not provided"
+                }
+              return {
+                'statusCode': 200,
+                'headers': CORS_HEADERS,
+                "body": json.dumps(result)
+              }
+            else:
+              return {
+                'statusCode': 405,
+                'headers': CORS_HEADERS,
+                "body": "ERROR: Method " + httpMethod + " not allowed"
+              }
+
+  TTELambdaRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: Role for Token Exchange Lambda. The policy for CreateTokenWithIAM
+              requires '*'. Providing IDC application ARN does not work.
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SSOInsightsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sso-oauth:CreateTokenWithIAM
+                Resource: '*'
+
+  APIInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TTELambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${MyAPI}/$default/$default
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: http-api-user-pool
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+
+  AppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - aws.cognito.signin.user.admin
+        - email
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      ClientName: api-app-client
+      CallbackURLs:
+        - !Sub https://${MyAPI}.execute-api.${AWS::Region}.amazonaws.com
+        - http://localhost:3000/
+      LogoutURLs:
+        - !Sub https://${MyAPI}.execute-api.${AWS::Region}.amazonaws.com
+        - http://localhost:3000/
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      UserPoolId: !Ref UserPool
+      SupportedIdentityProviders:
+        - COGNITO
+
+  UserPoolLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: Role for Lambda used by CFN Stack Creation for managing custom resources
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: UserPoolPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                Resource:
+                  - !GetAtt UserPool.Arn
+
+  UserPoolLambda:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - UserPoolLambdaExecutionRole
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W92
+            reason: Lambda used by CFN Stack Creation for managing custom resources
+          - id: W89
+            reason: Lambda used by CFN Stack Creation for managing custom resources. VPC not
+              required
+    Properties:
+      Handler: index.handler
+      Runtime: python3.11
+      Timeout: 300
+      Description: Create users in the user pool
+      Role: !GetAtt UserPoolLambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import cfnresponse
+          import logging
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          userpool_client = boto3.client('cognito-idp')
+          userlist = [
+              "martha_rivera@example.com",
+              "pat_candella@example.com",
+              "mateo_jackson@example.com",
+              "john_doe@example.com",
+              "mary_major@example.com"
+          ]
+          def add_user(uname, userpool_id):
+              userpool_client.admin_create_user(
+                  UserPoolId = userpool_id,
+                  Username = uname,
+                  TemporaryPassword = "re:Invent2024",
+                  MessageAction = 'SUPPRESS',
+                  UserAttributes = [
+                      {
+                          'Name': 'email',
+                          'Value': uname
+                      },
+                      {
+                          'Name': 'email_verified',
+                          'Value': 'True'
+                      }
+                  ]
+              )
+          def handler(event, context):
+              print('Received event: ' + json.dumps(event, indent=4, default=str))
+              try:
+                  res_props = event.get('ResourceProperties')
+                  if not res_props:
+                      raise Exception("Missing resource properties")
+                  userpool_id = res_props.get('UserPoolId')
+                  if not userpool_id:
+                      raise Exception("Missing UserPoolId property")
+                  data = {}
+                  phy_res_id = event.get('PhysicalResourceId')
+                  for u in userlist:
+                      logger.info("Adding user: %s" % u)
+                      add_user(u, userpool_id)
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, data, phy_res_id)
+              except Exception as e:
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  UserPoolCreateUsers:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt UserPoolLambda.Arn
+      UserPoolId: !Ref UserPool
+
+  IDCLambdaExecutionRoleAlt:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SSOAdminPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sso:CreateInstance
+                  - sso:DescribeInstance
+                  - sso:ListInstances
+                  - iam:CreateServiceLinkedRole
+                  - identitystore:CreateGroup
+                  - identitystore:CreateGroupMembership
+                  - identitystore:CreateUser
+                Resource:
+                  - '*'
+
+  IDCLambdaAlt:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.10
+      Timeout: 300
+      Environment:
+        Variables:
+          IDC_INSTANCE_ARN: !Sub arn:aws:sso:::instance/${IdentityCenterInstanceId}
+      Description: Create IDC Local Instance
+      Role: !GetAtt IDCLambdaExecutionRoleAlt.Arn
+      Code:
+        ZipFile: |
+          import json
+          import time
+          import boto3
+          import cfnresponse
+          import os
+          sso_client = boto3.client('sso-admin')
+          id_store_client = boto3.client('identitystore')
+          IDC_INSTANCE_ARN = os.environ.get('IDC_INSTANCE_ARN')
+          GROUPS = ["ML_SME_SA", "SA", "DB_SME_SA", "Admins", "AllUsers"]
+          USERS = [
+              {
+                  "user_name": "martha_rivera",
+                  "email": "martha_rivera@example.com",
+                  "display_name": "Martha Rivera",
+                  "given_name": "Martha",
+                  "last_name": "Rivera",
+                  "groups": ["Admins", "AllUsers"]
+              },
+              {
+                  "user_name": "pat_candella",
+                  "email": "pat_candella@example.com",
+                  "display_name": "Pat Candella",
+                  "given_name": "Pat",
+                  "last_name": "Candella",
+                  "groups": ["SA", "AllUsers"]
+              },
+              {
+                  "user_name": "mateo_jackson",
+                  "email": "mateo_jackson@example.com",
+                  "display_name": "Mateo Jackson",
+                  "given_name": "Mateo",
+                  "last_name": "Jackson",
+                  "groups": ["DB_SME_SA", "AllUsers"]
+              },
+              {
+                  "user_name": "john_doe",
+                  "email": "john_doe@example.com",
+                  "display_name": "John Doe",
+                  "given_name": "John",
+                  "last_name": "Doe",
+                  "groups": ["ML_SME_SA", "AllUsers"]
+              },
+              {
+                  "user_name": "mary_major",
+                  "email": "mary_major@example.com",
+                  "display_name": "Mary Major",
+                  "given_name": "Mary",
+                  "last_name": "Major",
+                  "groups": ["AllUsers"]
+              }
+          ]
+          def handler(event, context):
+              try:
+                  print('Received event: ' + json.dumps(event, indent=4, default=str))
+                  instance_arn = IDC_INSTANCE_ARN
+                  identity_store_id = None
+                  for idx in range(10):
+                      instance_dsec = sso_client.describe_instance(InstanceArn=instance_arn)
+                      print("IDC Instance:" + json.dumps(instance_dsec, indent=4, default=str))
+                      if instance_dsec['Status'] != "ACTIVE":
+                          time.sleep(10)
+                      else:
+                          identity_store_id = instance_dsec['IdentityStoreId']
+                          break
+                  if identity_store_id:
+                      group_idx = {}
+                      for group in GROUPS:
+                          resp = id_store_client.create_group(
+                              IdentityStoreId=identity_store_id,
+                              DisplayName=group,
+                              Description=group
+                          )
+                          print("Group Creation:" + json.dumps(resp, indent=4, default=str))
+                          group_idx[group] = resp["GroupId"]
+                      for user in USERS:
+                          user_resp = id_store_client.create_user(
+                              IdentityStoreId=identity_store_id,
+                              UserName=user["user_name"],
+                              DisplayName=user["display_name"],
+                              Emails=[{"Value": user["email"], "Type": "Work", "Primary": True}],
+                              Name={"GivenName": user["given_name"], "FamilyName": user["last_name"]}
+                          )
+                          print("User Creation:" + json.dumps(user_resp, indent=4, default=str))
+                          # Assign groups
+                          for grp in user["groups"]:
+                              if grp in group_idx:
+                                  member_resp = id_store_client.create_group_membership(
+                                      IdentityStoreId=identity_store_id,
+                                      GroupId=group_idx[grp],
+                                      MemberId={"UserId": user_resp["UserId"]}
+                                  )
+                                  print("Group Member Creation:" + json.dumps(member_resp, indent=4, default=str))
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {'InstanceArn': instance_arn}, instance_arn)
+                  else:
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  print("done")
+              except Exception as e:
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  IDCLambdaAltTrigger:
+    Type: Custom::IDCSetup
+    Properties:
+      ServiceToken: !GetAtt IDCLambdaAlt.Arn
+      IdentityCenterInstanceArn: !Sub arn:aws:sso:::instance/${IdentityCenterInstanceId}
+
+  IDCLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: Role for Lambda used by CFN Stack Creation for managing custom resources
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SSOAdminPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sso:PutApplicationAssignmentConfiguration
+                  - sso:PutApplicationAuthenticationMethod
+                  - sso:DeleteApplicationAuthenticationMethod
+                  - sso:PutApplicationAccessScope
+                  - sso:DeleteApplicationAccessScope
+                  - sso:CreateTrustedTokenIssuer
+                  - sso:DeleteTrustedTokenIssuer
+                  - sso:PutApplicationGrant
+                  - sso:DeleteApplicationGrant
+                Resource:
+                  - '*'
+
+  IDCLambda:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - IDCLambdaExecutionRole
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W92
+            reason: Lambda used by CFN Stack Creation for managing custom resources
+          - id: W89
+            reason: Lambda used by CFN Stack Creation for managing custom resources. VPC not
+              required
+    Properties:
+      Handler: index.handler
+      Runtime: python3.11
+      Timeout: 300
+      Description: Create IDC Local Instance
+      Role: !GetAtt IDCLambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import cfnresponse
+          sso_admin_client = boto3.client('sso-admin')
+          def app_access_scope(action, res_props):
+              idc_app_arn = res_props.get('IDCApplicationArn')
+              access_scopes = res_props.get('AccessScopes')
+              for access_scope in access_scopes:
+                  match action:
+                      case "put":
+                          sso_admin_client.put_application_access_scope(
+                              ApplicationArn=idc_app_arn,
+                              Scope=access_scope
+                          )
+                      case "delete":
+                          sso_admin_client.delete_application_access_scope(
+                              ApplicationArn=idc_app_arn,
+                              Scope=access_scope
+                          )
+              return f"[{idc_app_arn}][{','.join(access_scopes)}]"
+          def app_assignment_config(action, res_props):
+              idc_app_arn = res_props.get('IDCApplicationArn')
+              is_required = res_props.get('AssignmentRequired', 'no') == 'yes'
+              if action == "put":
+                  sso_admin_client.put_application_assignment_configuration(
+                      ApplicationArn=idc_app_arn,
+                      AssignmentRequired=is_required
+                  )
+              return f"[{idc_app_arn}][required={is_required}]"
+          def app_auth_method(action, res_props):
+              idc_app_arn = res_props.get('IDCApplicationArn')
+              auth_method = res_props.get('AuthenticationMethod')
+              resource_list = list(map(
+                  lambda x: json.dumps(x['Resource']),
+                  auth_method['Iam']['ActorPolicy']['Statement']
+              ))
+              match action:
+                  case "put":
+                      sso_admin_client.put_application_authentication_method(
+                          ApplicationArn=idc_app_arn,
+                          AuthenticationMethodType='IAM',
+                          AuthenticationMethod=auth_method
+                      )
+                  case "delete":
+                      sso_admin_client.delete_application_authentication_method(
+                          ApplicationArn=idc_app_arn,
+                          AuthenticationMethodType='IAM'
+                      )
+              return f"[{idc_app_arn}][IAM][{','.join(resource_list)}]"
+          def tt_issuer(action, res_props, phy_res_id):
+              name = res_props.get('Name')
+              idc_inst_arn = res_props.get('InstanceArn')
+              tti_config = res_props.get('TTIConfiguration')
+              data = {}
+              match action:
+                  case "put":
+                      resp = sso_admin_client.create_trusted_token_issuer(
+                          Name=name,
+                          InstanceArn=idc_inst_arn,
+                          TrustedTokenIssuerType='OIDC_JWT',
+                          TrustedTokenIssuerConfiguration=tti_config
+                      )
+                      phy_res_id = resp['TrustedTokenIssuerArn']
+                      data = resp
+                  case "update":
+                      tti_config['OidcJwtConfiguration'].pop('IssuerUrl', None)
+                      sso_admin_client.update_trusted_token_issuer(
+                          Name=name,
+                          TrustedTokenIssuerArn=phy_res_id,
+                          TrustedTokenIssuerConfiguration=tti_config
+                      )
+                  case "delete":
+                      sso_admin_client.delete_trusted_token_issuer(
+                          TrustedTokenIssuerArn=phy_res_id
+                      )
+              return phy_res_id, data
+          def app_grant(action, res_props):
+              idc_app_arn = res_props.get('IDCApplicationArn')
+              grant_type = res_props.get('GrantType')
+              grant = res_props.get('Grant')
+              match action:
+                  case "put":
+                      sso_admin_client.put_application_grant(
+                          ApplicationArn=idc_app_arn,
+                          GrantType=grant_type,
+                          Grant=grant
+                      )
+                  case "delete":
+                      sso_admin_client.delete_application_grant(
+                          ApplicationArn=idc_app_arn,
+                          GrantType=grant_type
+                      )
+              return f"[{idc_app_arn}][{json.dumps(grant['JwtBearer']['AuthorizedTokenIssuers'])}]"
+          def handler(event, context):
+              try:
+                  print('Received event: ' + json.dumps(event, indent=4, default=str))
+                  request_type = event.get('RequestType')
+                  if not request_type:
+                      raise Exception("Missing request type")
+                  res_props = event.get('ResourceProperties')
+                  if not res_props:
+                      raise Exception("Missing resource properties")
+                  old_res_props = event.get('OldResourceProperties')
+                  if request_type == "Update" and not old_res_props:
+                      raise Exception("Missing old resource properties")
+                  resource_type = res_props.get('ResourceType')
+                  if not resource_type:
+                      raise Exception("Missing UserPoolId property")
+                  data = {}
+                  phy_res_id = event.get('PhysicalResourceId')
+                  match resource_type:
+                      case "access-scope":
+                          match request_type:
+                              case "Create":
+                                  phy_res_id = app_access_scope("put", res_props)
+                              case "Update":
+                                  phy_res_id = app_access_scope("delete", old_res_props)
+                                  phy_res_id = app_access_scope("put", res_props)
+                              case "Delete":
+                                  phy_res_id = app_access_scope("delete", res_props)
+                      case "assignment-config":
+                          match request_type:
+                              case "Create" | "Update":
+                                  phy_res_id = app_assignment_config("put", res_props)
+                      case "app-auth-method":
+                          match request_type:
+                              case "Create" | "Update":
+                                  phy_res_id = app_auth_method("put", res_props)
+                              case "Delete":
+                                  phy_res_id = app_auth_method("delete", res_props)
+                      case "trusted-token-issuer":
+                          match request_type:
+                              case "Create":
+                                  phy_res_id, data = tt_issuer("put", res_props, phy_res_id)
+                              case "Update":
+                                  phy_res_id, data = tt_issuer("update", res_props, phy_res_id)
+                              case "Delete":
+                                  phy_res_id, data = tt_issuer("delete", res_props, phy_res_id)
+                      case "application-grant":
+                          match request_type:
+                              case "Create" | "Update":
+                                  phy_res_id = app_grant("put", res_props)
+                              case "Delete":
+                                  phy_res_id = app_grant("delete", res_props)
+                      case _:
+                          raise Exception("Unsupported resource type.")
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, data, phy_res_id)
+              except Exception as e:
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  IDCApiApp:
+    Type: AWS::SSO::Application
+    Properties:
+      ApplicationProviderArn: arn:aws:sso::aws:applicationProvider/custom
+      InstanceArn: !Sub arn:aws:sso:::instance/${IdentityCenterInstanceId}
+      Name: !Ref AWS::StackName
+      PortalOptions:
+        Visibility: DISABLED
+
+  IDCAppScopes:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt IDCLambda.Arn
+      ResourceType: access-scope
+      IDCApplicationArn: !GetAtt IDCApiApp.ApplicationArn
+      AccessScopes:
+        - qbusiness:conversations:access
+        - qbusiness:messages:access
+    DependsOn:
+      - IDCApiApp
+      - IDCLambda
+
+  IDCAppAssignmentConfig:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt IDCLambda.Arn
+      ResourceType: assignment-config
+      IDCApplicationArn: !GetAtt IDCApiApp.ApplicationArn
+      AssignmentRequired: 'no'
+    DependsOn:
+      - IDCApiApp
+      - IDCLambda
+
+  IDCAppAuthMethod:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt IDCLambda.Arn
+      ResourceType: app-auth-method
+      IDCApplicationArn: !GetAtt IDCApiApp.ApplicationArn
+      AuthenticationMethod:
+        Iam:
+          ActorPolicy:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sso-oauth:CreateTokenWithIAM
+                Principal:
+                  AWS: !GetAtt QBizChatRole.Arn
+                Resource: !GetAtt IDCApiApp.ApplicationArn
+    DependsOn:
+      - IDCApiApp
+      - IDCLambda
+
+  IDCTrustedTokenIssuer:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt IDCLambda.Arn
+      ResourceType: trusted-token-issuer
+      Name: !Join
+        - '-'
+        - - !Ref AWS::StackName
+          - !Select
+            - 0
+            - !Split
+              - '-'
+              - !Select
+                - 2
+                - !Split
+                  - /
+                  - !Ref AWS::StackId
+      InstanceArn: !Sub arn:aws:sso:::instance/${IdentityCenterInstanceId}
+      TTIConfiguration:
+        OidcJwtConfiguration:
+          IssuerUrl: !GetAtt UserPool.ProviderURL
+          ClaimAttributePath: email
+          IdentityStoreAttributePath: emails.value
+          JwksRetrievalOption: OPEN_ID_DISCOVERY
+    DependsOn:
+      - IDCLambda
+
+  IDCAppGrant:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt IDCLambda.Arn
+      ResourceType: application-grant
+      IDCApplicationArn: !GetAtt IDCApiApp.ApplicationArn
+      GrantType: urn:ietf:params:oauth:grant-type:jwt-bearer
+      Grant:
+        JwtBearer:
+          AuthorizedTokenIssuers:
+            - TrustedTokenIssuerArn: !GetAtt IDCTrustedTokenIssuer.TrustedTokenIssuerArn
+              AuthorizedAudiences:
+                - !GetAtt AppClient.ClientId
+    DependsOn:
+      - IDCApiApp
+      - IDCLambda
+      - IDCTrustedTokenIssuer
+
+  QBizChatRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub arn:aws:iam::${AWS::AccountId}:root
+                - !Sub
+                  - arn:aws:sts::${AWS::AccountId}:assumed-role/${TTELambdaRole}/${ttelambdaname}
+                  - ttelambdaname: !Join
+                      - '-'
+                      - - !Ref AWS::StackName
+                        - TTELambdaFunction
+            Action:
+              - sts:AssumeRole
+              - sts:SetContext
+      Policies:
+        - PolicyName: QBizChatPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - qbusiness:Chat
+                  - qbusiness:ChatSync
+                  - qbusiness:ListMessages
+                  - qbusiness:ListConversations
+                  - qbusiness:DeleteConversation
+                  - qbusiness:PutFeedback
+                  - qbusiness:GetWebExperience
+                  - qbusiness:GetApplication
+                  - qbusiness:ListPlugins
+                  - qbusiness:GetChatControlsConfiguration
+                Resource:
+                  - !Sub arn:aws:qbusiness:${AWS::Region}:${AWS::AccountId}:application/*
+
+Outputs:
+  IDCApiAppArn:
+    Description: IDC application Arn used as client-id in create-token-with-iam API
+    Value: !GetAtt IDCApiApp.ApplicationArn
+
+  ApiEndpoint:
+    Description: API Endpoint to be used to get the credentials
+    Value: !Sub https://${MyAPI}.execute-api.${AWS::Region}.amazonaws.com
+
+  UserPoolClientId:
+    Description: Client ID of the User Pool
+    Value: !GetAtt AppClient.ClientId
+
+  UserPoolId:
+    Description: User Pool ID
+    Value: !Ref UserPool
+
+  QBizChatRole:
+    Description: Role to be assumed to invoke Amazon Q Business Chat API
+    Value: !GetAtt QBizChatRole.Arn
+
+  QBizAppId:
+    Description: Application ID of the Amazon Q Business
+    Value: !Ref QBusinessApplicationId
+
+  ConfigJS:
+    Description: Config JS file content
+    Value: !Sub
+      - |
+        const config = {
+          "aws_account_id": "${AWS::AccountId}",
+          "aws_region": "${AWS::Region}",
+          "q_application_id": "${qappid}",
+          "credential_vendor_api_base_endpoint": "https://${myapi}.execute-api.${AWS::Region}.amazonaws.com",
+          "cognito_userpool_client_id": "${clientid}",
+          "cognito_userpool_id": "${poolid}"
+        };
+      - qappid: !Ref QBusinessApplicationId
+        poolid: !Ref UserPool
+        clientid: !GetAtt AppClient.ClientId
+        myapi: !Ref MyAPI
