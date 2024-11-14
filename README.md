@@ -91,7 +91,7 @@ Now we can install all package dependencies:
 Now we can build the application:
 1. Execute `npm run build`
 2. To prepare for deployment, compress the contents of `./app/dist` into a .zip folder with `cd /home/cloudshell-user/integrate-your-application-with-amazon-q-business-identity-aware-apis/app/dist && zip -r ../archive.zip *`
-3. Download archive.zip. Click the "Actions" downdown in Cloudshell in the top right, and enter this file path: `/home/cloudshell-user/integrate-your-application-with-amazon-q-business-identity-aware-apis/app/archive.zip`
+3. Download archive.zip to your local machine. You'll use it to deploy the application in the next section. Click the "Actions" downdown in Cloudshell in the top right, and enter this file path: `/home/cloudshell-user/integrate-your-application-with-amazon-q-business-identity-aware-apis/app/archive.zip`
 
 #### Deploy
 
