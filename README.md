@@ -80,7 +80,7 @@ First let's download and change the configuration of the react application so th
 3. Open the AWS CloudShell using the button in the bottom left of the AWS Console.
 4. Download this repository with `git clone https://github.com/aws-samples/integrate-your-application-with-amazon-q-business-identity-aware-apis.git`
 5. Run this command `vim /home/cloudshell-user/integrate-your-application-with-amazon-q-business-identity-aware-apis/app/public/config.js`
-6. Copy the value of the `ConfigJS` output from the CloudFormation Stack, and in CloudShell, use arrow keys to scroll down to the line which starts `const config =`. While your cursor is on these lines, delete them using the "d" key (hint: you have to pres the d key twice to delete a single line).
+6. Copy the value of the `ConfigJS` output from the CloudFormation Stack, and in CloudShell, use arrow keys to scroll down to the line which starts `const config =`. While your cursor is on these lines, delete them using the "d" key (hint: you have to press the d key twice to delete a single line).
 7. Now you can enter insert mode by pressing the "i" key, and then "ctrl/cmd + v" to paste the value which you copied from CloudFormation. 
 8. To save and close the vim editor, press the "esc" key, and then use these keys in succession: ":wq!" - hit the "enter/return" key.
 
